@@ -1,0 +1,7 @@
+<launch>
+  <!-- 给用户一个统一入口 -->
+  <arg name="hover_height" default="50"/>
+  <include file="$(find hector_mapping)/launch/phase1.launch">
+    <arg name="hover_height" value="$(arg hover_height)"/>
+  </include>
+</launch>

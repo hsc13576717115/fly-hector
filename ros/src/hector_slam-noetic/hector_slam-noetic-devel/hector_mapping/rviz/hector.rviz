@@ -1,0 +1,66 @@
+<rviz>
+  <!-- 全局选项 -->
+  <GlobalOptions>
+    <FixedFrame>map</FixedFrame>
+    <TargetFrame>map</TargetFrame>
+  </GlobalOptions>
+
+  <!-- 1. 显示地图 -->
+  <Display class="rviz/Map" name="Hector SLAM Map">
+    <Topic>/map</Topic>
+    <ColorScheme>map</ColorScheme>
+  </Display>
+
+  <!-- 2. 激光雷达数据 -->
+  <Display class="rviz/LaserScan" name="Laser Scan">
+    <Topic>/scan</Topic>
+    <QueueSize>10</QueueSize>
+    <ColorTransformer>FlatColor</ColorTransformer>
+    <Value>1.0</Value>
+  </Display>
+
+  <!-- 3. 机器人模型 -->
+  <Display class="rviz/RobotModel" name="Robot Model">
+    <RobotDescription>robot_description</RobotDescription>
+    <TFPrefix></TFPrefix>
+  </Display>
+
+  <!-- 4. 全局路径规划 -->
+  <Display class="rviz/Path" name="Global Plan">
+    <Topic>/move_base/NavfnROS/plan</Topic>
+    <Color>150, 50, 255</Color>
+    <LineWidth>0.1</LineWidth>
+  </Display>
+
+  <!-- 5. 局部路径规划 -->
+  <Display class="rviz/Path" name="Local Plan">
+    <Topic>/move_base/DWAPlannerROS/local_plan</Topic>
+    <Color>255, 0, 0</Color>
+    <LineWidth>0.05</LineWidth>
+  </Display>
+
+  <!-- 6. 全局代价地图 -->
+  <Display class="rviz/Map" name="Global Costmap">
+    <Topic>/move_base/global_costmap/costmap</Topic>
+    <Alpha>0.5</Alpha>
+  </Display>
+
+  <!-- 7. 局部代价地图 -->
+  <Display class="rviz/Map" name="Local Costmap">
+    <Topic>/move_base/local_costmap/costmap</Topic>
+    <Alpha>0.5</Alpha>
+  </Display>
+
+  <!-- 8. 当前目标点 -->
+  <Display class="rviz/Marker" name="Current Goal">
+    <Topic>/move_base/current_goal</Topic>
+    <QueueSize>10</QueueSize>
+  </Display>
+
+  <!-- 9. TF 显示 -->
+  <Display class="rviz/TF" name="TF">
+    <FrameTimeout>15</FrameTimeout>
+    <ShowNames>true</ShowNames>
+    <ShowAxes>true</ShowAxes>
+  </Display>
+</rviz>

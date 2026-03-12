@@ -1,0 +1,31 @@
+<launch>
+  <!-- 1. 启动激光雷达 -->
+  <include file="$(find hector_mapping)/launch/wheeltec_lidar.launch" />
+
+  <!-- 2. 启动 Hector SLAM 建图 -->
+  <include file="$(find hector_mapping)/launch/mapping_default.launch" />
+
+  <!-- 3. 坐标变换 -->
+  <node pkg="tf" type="static_transform_publisher" name="odom_to_base" args="0.0 0.0 0.0 0 0 0 odom_combined base_footprint 100" />
+  <node pkg="tf" type="static_transform_publisher" name="base_to_laser" args="0.0 0.0 0.0 3.14 0 0 base_footprint laser 100" />
+
+  <!-- 4. 启动 move_base 进行路径规划和避障 -->
+  <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
+    <param name="base_global_planner" value="navfn/NavfnROS" />
+    <param name="base_local_planner" value="dwa_local_planner/DWAPlannerROS" />
+    <rosparam file="$(find hector_mapping)/config/costmap_common_params.yaml" command="load" ns="global_costmap" />
+    <rosparam file="$(find hector_mapping)/config/costmap_common_params.yaml" command="load" ns="local_costmap" />
+    <rosparam file="$(find hector_mapping)/config/global_costmap_params.yaml" command="load" />
+    <rosparam file="$(find hector_mapping)/config/local_costmap_params.yaml" command="load" />
+    <rosparam file="$(find hector_mapping)/config/base_local_planner_params.yaml" command="load" />
+  </node>
+
+  <!-- 5. 串口控制节点 -->
+  <node pkg="hector_mapping" type="serial_control.py" name="serial_control" output="screen">
+    <param name="serial_port" value="/dev/ttyS3" />
+    <param name="baud_rate" value="115200" />
+  </node>
+
+  <!-- 6. 启动 RViz -->
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find hector_mapping)/rviz/hector_nav.rviz" />
+</launch>

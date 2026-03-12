@@ -1,0 +1,38 @@
+# ROS workspace artifacts
+ros/.catkin_tools/
+ros/build/
+ros/devel/
+ros/install/
+ros/logs/
+ros/.vscode/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Keil and debugger local files
+*.uvguix.*
+*.uvoptx
+JLinkLog*.txt
+JLinkSettings.ini
+EventRecorderStub.scvd
+
+# Common embedded build outputs
+Listings/
+Objects/
+RTE/
+*.axf
+*.crf
+*.d
+*.dep
+*.hex
+*.htm
+*.lnp
+*.map
+*.o
+
+# Oversized local package (GitHub file size limit)
+凌霄/3.开发环境安装/Keil.STM32F4xx_DFP.2.2.0.pack
+
+# Backup of embedded repository metadata kept locally
+ros/src/vision_opencv/.git_embedded_backup/

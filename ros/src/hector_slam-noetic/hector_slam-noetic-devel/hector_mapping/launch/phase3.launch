@@ -1,0 +1,22 @@
+<launch>
+  <!-- 参数：摄像头设备路径 -->
+  <arg name="camera_device" default="/dev/video0" doc="/dev/video0"/>
+
+  <!-- 参数：目标颜色 -->
+  <arg name="target_color" default="Green" doc="目标色块颜色: Red2, Green, Blue"/>
+
+  <!-- 启动颜色检测节点 -->
+  <node
+    pkg="hector_mapping"        
+    type="color.py"  
+    name="color_blob_ros_node"     
+    output="screen"                
+    required="true">
+    
+    <!-- 传递参数 -->
+    <param name="serial_port" value="/dev/ttyS7" />
+    <param name="baud_rate" value="115200" />
+    <param name="target_color" value="$(arg target_color)" />
+    
+  </node>
+</launch>

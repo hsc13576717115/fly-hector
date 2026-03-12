@@ -1,0 +1,35 @@
+# local_costmap_params.yaml
+
+global_frame:       map
+robot_base_frame:   base_footprint
+update_frequency:   30.0
+publish_frequency:  30.0
+# static_map: true
+
+rolling_window:     true
+width:              1.5
+height:             1.5
+resolution:         0.05
+transform_tolerance: 0.05
+unknown_cost_value: 0
+
+plugins:
+  - { name: static_layer,   type: "costmap_2d::StaticLayer" }
+  - { name: obstacle_layer, type: "costmap_2d::ObstacleLayer" }
+  - { name: inflation_layer,type: "costmap_2d::InflationLayer" }
+
+static_layer:
+  map_topic: /map
+  subscribe_to_updates: true
+
+obstacle_layer:
+  track_unknown_space: false       # ✅ 应该写在这里才有效！
+  observation_sources: scan
+  scan:
+    data_type: LaserScan
+    topic: /scan
+    marking: true
+    clearing: true
+
+inflation_layer:
+  inflation_radius: 0.1

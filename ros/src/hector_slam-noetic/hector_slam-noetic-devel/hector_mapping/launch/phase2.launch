@@ -1,0 +1,155 @@
+<launch>
+
+ <arg name="a_x"        default="2.7"/>
+  <arg name="a_y"        default="0.0"/>
+  <arg name="b_x"        default="2.7"/>
+  <arg name="b_y"        default="1.0"/>
+  <arg name="c_x"        default="-0.03"/>  
+  <arg name="c_y"        default="3.85"/>
+  <arg name="d_x"        default="-0.03"/>  
+  <arg name="d_y"        default="3.85"/>
+  <arg name="e_x"        default="3.0"/>  
+  <arg name="e_y"        default="2.9"/>
+  <arg name="f_x"        default="4.0"/>  
+  <arg name="f_y"        default="2.85"/>
+  <arg name="g_x"        default="4.3"/>  <!-- 红 4.3    蓝4.7    绿 3.9 -->
+  <arg name="g_y"        default="0.6"/>  <!-- 红 0.6    蓝-0.1    绿 -0.1 -->
+  <arg name="hover_time" default="2.0"/>
+  <param name="hover_time_wp2" value="5.0"/>
+  <arg name="xy_tolerance" default="0.25"/>
+
+ 
+<!-- 
+    <arg name="a_x"        default="0.0"/>
+  <arg name="a_y"        default="0.0"/>
+  <arg name="b_x"        default="0.0"/>
+  <arg name="b_y"        default="0.0"/>
+  <arg name="c_x"        default="0.0"/>  
+  <arg name="c_y"        default="0.0"/>
+  <arg name="d_x"        default="0.0"/>  
+  <arg name="d_y"        default="0.0"/>
+  <arg name="e_x"        default="0.0"/>  
+  <arg name="e_y"        default="0.0"/>
+  <arg name="f_x"        default="0.0"/>  
+  <arg name="f_y"        default="0.0"/>
+  <arg name="g_x"        default="0.0"/> 
+  <arg name="g_y"        default="0.0"/>  
+  <arg name="hover_time" default="0.1"/>
+  <arg name="xy_tolerance" default="0.20"/> -->
+  
+
+
+  <!-- 1. 激光雷达驱动 -->
+  <include file="$(find hector_mapping)/launch/wheeltec_lidar.launch"/>
+
+  <!-- 2. RViz -->
+  <node name="rviz" pkg="rviz" type="rviz"
+        output="screen"
+        args="-d $(find hector_mapping)/rviz/hector_nav.rviz"/>
+
+  <!-- 3. Hector SLAM 建图 -->
+  <include file="$(find hector_mapping)/launch/mapping_default.launch">
+    <param name="map_resolution"          value="0.05"/>
+    <param name="map_update_angle_thresh" value="0.3"/>
+    <param name="pub_map_odom_transform"  value="true"/>
+    <param name="map_pub_period"          value="0.5"/>
+    <param name="tf_broadcast_rate"       value="10"/> <!-- 降低到 10Hz -->
+    <param name="use_tf_pose_start_estimate" value="false"/> <!-- 禁用 TF 初始位姿 -->
+  </include>
+
+  <!-- 4. EKF 融合（仅使用 hector_slam 的 odom_combined） -->
+  <node pkg="robot_localization"
+        type="ekf_localization_node"
+        name="ekf_filter_node"
+        output="screen">
+    <param name="odom0" value="/odom_combined"/>
+    <rosparam param="odom0_config">
+      [true, true, true,
+       false, false, false,
+       false, false, false,
+       false, false, false,
+       false, false, false]
+    </rosparam>
+    <param name="odom_frame"           value="odom_combined"/>
+    <param name="base_link_frame"      value="base_link"/>
+    <param name="frequency"            value="30.0"/> <!-- 降低到 30Hz -->
+    <param name="transform_time_offset" value="0.0"/>
+    <param name="transform_timeout"    value="0.0"/>
+  </node>
+
+  <!-- 5. 静态 TF -->
+  <node pkg="tf2_ros" type="static_transform_publisher"
+        name="odom_to_base"
+        args="0 0 0 0 0 0 odom_combined base_link"/>
+  <node pkg="tf2_ros" type="static_transform_publisher"
+        name="link_to_footprint"
+        args="0 0 0 0 0 0 base_link base_footprint"/>
+  <node pkg="tf2_ros" type="static_transform_publisher"
+        name="base_to_laser"
+        args="0 0 0 3.14 0 0 base_footprint laser"/>
+
+  <!-- 6. move_base 导航 -->
+  <node pkg="move_base" type="move_base"
+        name="move_base" output="screen">
+    <param name="base_global_planner"      value="navfn/NavfnROS"/>
+    <param name="base_local_planner"       value="dwa_local_planner/DWAPlannerROS"/>
+    <param name="global_frame"             value="map"/>
+    <param name="robot_base_frame"         value="base_link"/>
+    <param name="planner_frequency"        value="2.5"/>
+    <param name="controller_frequency"     value="10.0"/>
+    <param name="controller_patience"      value="30.0"/> <!-- 增加到 30秒 -->
+    <param name="controller_allowed_planning_time" value="5.0"/>
+    <param name="controller_transform_tolerance"   value="0.2"/> <!-- 收紧到 0.2 -->
+    <param name="global_plan_transform_tolerance"  value="0.3"/> <!-- 收紧到 0.2 -->
+    <param name="NavfnROS/allow_unknown"      value="true"/>
+    <param name="NavfnROS/default_tolerance"  value="1.5"/> <!-- 收紧到 0.1 -->
+    <param name="NavfnROS/planner_window_x"   value="0.0"/>
+    <param name="NavfnROS/planner_window_y"   value="0.0"/>
+
+    <rosparam file="$(find hector_mapping)/config/costmap_common_params.yaml"
+              command="load"/>
+    <rosparam file="$(find hector_mapping)/config/global_costmap_params.yaml"
+              ns="global_costmap" command="load"/>
+    <param name="global_costmap/map_topic"           value="/map"/>
+    <param name="global_costmap/transform_tolerance" value="1.5"/> <!-- 收紧到 0.5 -->
+    <param name="global_costmap/update_frequency"    value="8.0"/>
+
+    <rosparam file="$(find hector_mapping)/config/local_costmap_params.yaml"
+              ns="local_costmap" command="load"/>
+    <param name="local_costmap/transform_tolerance" value="1.5"/> <!-- 收紧到 0.5 -->
+    <param name="local_costmap/update_frequency"    value="8.0"/>
+
+    <rosparam file="$(find hector_mapping)/config/global_planner_params.yaml" 
+              command="load"/>
+
+    <rosparam file="$(find hector_mapping)/config/base_local_planner_params.yaml"
+              command="load"/>
+  </node>
+
+    <!-- 7. 路径跟踪：新增6个目标点参数 -->
+  <node pkg="hector_mapping" type="path_follower_node.py"
+        name="path_follower" output="screen">
+    <param name="serial_port" value="/dev/ttyS7"/>
+    <param name="baud_rate"   value="115200"/>
+    <param name="plan_topic"  value="/move_base/DWAPlannerROS/local_plan"/>
+    <param name="max_speed"   value="30"/>
+    <param name="hz"          value="10.0"/>
+    <!-- 传递所有6个目标点参数 -->
+    <param name="a_x"         value="$(arg a_x)"/>
+    <param name="a_y"         value="$(arg a_y)"/>
+    <param name="b_x"         value="$(arg b_x)"/>
+    <param name="b_y"         value="$(arg b_y)"/>
+    <param name="c_x"         value="$(arg c_x)"/>  <!-- 新增参数传递 -->
+    <param name="c_y"         value="$(arg c_y)"/>
+    <param name="d_x"         value="$(arg d_x)"/>
+    <param name="d_y"         value="$(arg d_y)"/>
+    <param name="e_x"         value="$(arg e_x)"/>
+    <param name="e_y"         value="$(arg e_y)"/>
+    <param name="f_x"         value="$(arg f_x)"/>
+    <param name="f_y"         value="$(arg f_y)"/>
+    <param name="g_x"         value="$(arg g_x)"/>
+    <param name="g_y"         value="$(arg g_y)"/>
+    <param name="hover_time"  value="$(arg hover_time)"/>
+    <param name="xy_tolerance" value="$(arg xy_tolerance)"/>
+  </node>
+</launch>

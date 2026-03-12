@@ -1,0 +1,12 @@
+# ROS workspace build outputs
+.catkin_tools/
+build/
+devel/
+install/
+logs/
+
+# Editor and cache files
+.vscode/
+.idea/
+__pycache__/
+*.pyc

@@ -1,0 +1,121 @@
+<launch>
+  <!-- 1. 激光雷达驱动 -->
+  <include file="$(find hector_mapping)/launch/wheeltec_lidar.launch"/>
+
+  <!-- 2. 串口 IMU → /imu/data -->
+  <node pkg="hector_mapping" type="imu_serial_node.py" name="imu_serial_node" output="screen">
+    <param name="port" value="/dev/ttyS3"/>
+    <param name="baud" value="115200"/>
+  </node>
+
+  <!-- 3. Hector SLAM 建图（开启 IMU 辅助匹配）-->
+  <param name="hector_mapping/use_imu_heading"            value="true"/>
+  <param name="hector_mapping/use_tf_pose_start_estimate" value="true"/>
+  <include file="$(find hector_mapping)/launch/mapping_default.launch">
+    <param name="map_resolution"          value="0.025"/>
+    <param name="map_update_angle_thresh" value="0.1"/>
+    <param name="pub_map_odom_transform"  value="true"/>
+    <param name="map_pub_period"          value="0.1"/>   <!-- 从10 Hz改为5 Hz -->
+    <param name="tf_broadcast_rate"       value="10"/>     <!-- 显式设置TF发布频率为5 Hz -->
+  </include>
+
+  <!-- 4. IMU + Hector 里程计 融合（robot_localization EKF）-->
+  <node pkg="robot_localization" type="ekf_localization_node" name="ekf_filter_node" output="screen">
+    <!-- 数据源 -->
+    <param name="imu0"  value="/imu/data"/>
+    <param name="odom0" value="/odom_combined"/>
+    <!-- 配置 -->
+    <rosparam param="imu0_config">
+      [false, false, false,
+       true,  true,  true,
+       false, false, false,
+       false, false, false,
+       false, false, false]
+    </rosparam>
+    <rosparam param="odom0_config">
+      [true,  true,  true,
+       false, false, false,
+       false, false, false,
+       false, false, false,
+       false, false, false]
+    </rosparam>
+    <param name="map_frame"            value="map"/>
+    <param name="odom_frame"           value="odom_combined"/>
+    <param name="base_link_frame"      value="base_link"/>
+    <param name="frequency"            value="30.0"/>  <!-- 从30 Hz改为10 Hz -->
+    <param name="transform_time_offset" value="0.2"/>
+  </node>
+
+  <!-- 5. 静态 TF -->
+  <node pkg="tf2_ros" type="static_transform_publisher" name="odom_to_base"
+        args="0 0 0 0 0 0 odom_combined base_link"/>
+  <node pkg="tf2_ros" type="static_transform_publisher" name="link_to_footprint"
+        args="0 0 0 0 0 0 base_link base_footprint"/>
+  <node pkg="tf2_ros" type="static_transform_publisher" name="base_to_laser"
+        args="0 0 0 3.14 0 0 base_footprint laser"/>
+
+  <!-- 6. move_base 导航 -->
+  <node pkg="move_base" type="move_base" name="move_base" output="screen">
+    <!-- Planner 插件 -->
+    <param name="base_global_planner" value="navfn/NavfnROS"/>
+    <param name="base_local_planner"  value="dwa_local_planner/DWAPlannerROS"/>
+    <param name="global_frame" value="map"/>
+    <param name="robot_base_frame" value="base_link"/>
+    <param name="planner_frequency" value="5.0"/>
+    <param name="controller_frequency" value="10.0"/>
+
+    <!-- 新增：DWA 控制器 TF 容差参数 -->
+    <param name="controller_frequency"            value="10.0"/>
+    <param name="controller_patience"              value="15.0"/>
+    <param name="controller_allowed_planning_time" value="5.0"/>
+    <param name="controller_transform_tolerance"   value="0.5"/>
+    <param name="global_plan_transform_tolerance" value="0.5"/>
+
+    <!-- NavfnROS 全局规划器参数，放宽未知区和容差 -->
+    <param name="NavfnROS/allow_unknown"      value="true"/>
+    <param name="NavfnROS/default_tolerance" value="2.0"/>
+    <param name="NavfnROS/planner_window_x"  value="0.0"/>
+    <param name="NavfnROS/planner_window_y"  value="0.0"/>
+
+    <!-- 加载公共 Costmap 参数 -->
+    <rosparam file="$(find hector_mapping)/config/costmap_common_params.yaml" command="load"/>
+
+    <!-- 全局 costmap -->
+    <rosparam file="$(find hector_mapping)/config/global_costmap_params.yaml"
+              command="load" ns="global_costmap"/>
+    <param name="global_costmap/map_topic"           value="/map"/>
+    <param name="global_costmap/transform_tolerance" value="2.0"/>
+    <param name="global_costmap/update_frequency"    value="10.0"/>
+
+    <!-- 局部 costmap -->
+    <rosparam file="$(find hector_mapping)/config/local_costmap_params.yaml"
+              command="load" ns="local_costmap"/>
+    <param name="local_costmap/transform_tolerance" value="2.0"/>
+    <param name="local_costmap/update_frequency"    value="10.0"/>
+
+    <!-- 本地规划器 DWA 参数 -->
+    <rosparam file="$(find hector_mapping)/config/base_local_planner_params.yaml" command="load"/>
+  </node>
+
+  <!-- 7. 切换“定点+程控” -->
+  <!-- <node pkg="hector_mapping" type="serial_control.py" name="mode_switch" output="screen">
+    <param name="serial_port" value="/dev/ttyS7"/>
+    <param name="baud_rate"   value="115200"/>
+    <param name="mode"        value="3"/>
+  </node> -->
+
+  <!-- 8. 路径跟踪 -->
+  <node pkg="hector_mapping" type="path_follower_node.py" name="path_follower" output="screen">
+    <param name="serial_port" value="/dev/ttyS7"/>
+    <param name="baud_rate"   value="115200"/>
+    <!-- 确保与 DWAPlannerROS 发布的 topic 一致 -->
+    <param name="plan_topic"  value="/move_base/DWAPlannerROS/local_plan"/>
+    <param name="max_speed"   value="10"/>
+    <param name="max_omega"   value="10"/>
+    <param name="hz"          value="20.0"/>
+  </node>
+
+  <!-- 9. RViz（自动加载预配置界面） -->
+  <node name="rviz" pkg="rviz" type="rviz" output="screen"
+        args="-d $(find hector_mapping)/rviz/hector_nav.rviz"/>
+</launch>

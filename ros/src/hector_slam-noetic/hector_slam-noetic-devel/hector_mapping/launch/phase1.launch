@@ -1,0 +1,19 @@
+<launch>
+  <!-- 传入期望悬停高度 -->
+  <arg name="hover_height" default="33"/>
+
+  <!-- 串口发命令 & 启动 管理节点 -->
+  <node pkg="hector_mapping"
+        type="serial_cmd_and_launcher.py"
+        name="serial_and_launcher"
+        output="screen">
+    <param name="serial_port"   value="/dev/ttyS7"/>
+    <param name="baud_rate"     value="115200"/>
+    <param name="unlock_cmd_id"   value="64"/>
+    <param name="takeoff_cmd_id"  value="65"/>
+    <param name="hover_height"  value="$(arg hover_height)"/>
+    <!-- 指定 phase2.launch 的绝对路径 -->
+    <param name="next_launch"
+           value="$(find hector_mapping)/launch/phase2.launch"/>
+  </node>
+</launch>

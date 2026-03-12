@@ -1,0 +1,46 @@
+###############################################################################
+# Move Base Planner Plugins
+###############################################################################
+
+# 指定全局规划器
+base_global_planner: "navfn/NavfnROS"
+
+# 指定本地规划器
+base_local_planner: "dwa_local_planner/DWAPlannerROS"
+
+###############################################################################
+# DWA 本地规划器参数
+###############################################################################
+# base_local_planner_params.yaml
+
+DWAPlannerROS:
+  # 只保留一次
+  prune_plan: true
+  global_plan_prune_distance: 0.1
+
+  max_vel_x: 0.05
+  min_vel_x: -0.05        # 允许少量后退
+  max_vel_theta: 1.5
+  min_vel_theta: -1.5
+  acc_lim_x: 2
+  acc_lim_theta: 3.0
+
+  sim_time: 2.5
+  sim_granularity: 0.025
+
+  path_distance_bias: 30.0
+  goal_distance_bias: 35.0
+  occdist_scale: 0.6
+
+  # 放宽容忍度
+  xy_goal_tolerance: 0.10
+  yaw_goal_tolerance: 3.14
+  latch_xy_goal_tolerance: false
+
+  # 更灵敏的振荡检测
+  oscillation_timeout: 1.5
+  oscillation_distance: 0.2
+
+  controller_transform_tolerance: 0.1
+  global_plan_transform_tolerance: 0.1
+

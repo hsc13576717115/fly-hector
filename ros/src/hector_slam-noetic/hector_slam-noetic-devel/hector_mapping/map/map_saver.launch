@@ -1,0 +1,5 @@
+<launch>
+	<node pkg="map_server" type="map_saver" name="map_saver1" args="-f /home/zcd/catkin_ws/src/hector_slam-noetic-devel/hector_mapping/map/WHEELTEC" output="screen">	
+	</node>
+	
+</launch>

@@ -1,0 +1,5 @@
+*** Using Compiler 'V6.22', folder: 'D:\Keil5\ARM\ARMCLANG\Bin'
+Build target 'Ano_LX'
+After Build - User command #1: fromelf.exe --bin -o ./ANO-LX.bin ./build/Ano_LX.axf
+".\build\ANO_LX.axf" - 0 Error(s), 0 Warning(s).
+Build Time Elapsed:  00:00:00
