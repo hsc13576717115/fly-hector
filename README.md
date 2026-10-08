@@ -13,7 +13,13 @@
 
 ## 演示视频
 
-fly-hector 项目演示。
+点击下方预览图观看项目演示视频。
+
+<a href="media/fly-hector-demo.mp4">
+  <img src="media/fly-hector-demo.jpg" alt="fly-hector 演示视频" width="360">
+</a>
+
+[观看 / 下载视频](media/fly-hector-demo.mp4)
 
 ## 目录结构
 
