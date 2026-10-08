@@ -11,6 +11,16 @@
 3. `凌霄/`
    配套资料目录，含用户手册、通信协议、原理图、开发环境包和参考 PDF。
 
+## 演示视频
+
+点击下方预览图观看项目演示视频。
+
+<a href="media/fly-hector-demo.mp4">
+  <img src="media/fly-hector-demo.jpg" alt="fly-hector 演示视频" width="360">
+</a>
+
+[观看 / 下载视频](media/fly-hector-demo.mp4)
+
 ## 目录结构
 
 ```text
@@ -263,7 +273,7 @@ roslaunch hector_mapping drone_navigation.launch
   - 硬件接线图
   - 飞控串口协议说明
   - 实测启动步骤
-  - 任务演示视频或截图
+  - 任务演示截图
 
 ## 当前状态
 
